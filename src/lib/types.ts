@@ -87,6 +87,10 @@ export type AddMenuItemResponse = {
   id: string;
 };
 
+export type UpdateMenuItemResponse = AddMenuItemResponse;
+
+export type DeleteMenuItemResponse = AddMenuItemResponse;
+
 export type MenuItemStatus = "available" | "unavailable" | "out_of_stock";
 
 export type MenuItem = {
@@ -97,5 +101,6 @@ export type MenuItem = {
   price: number;
   imageUrl?: string;
   category: string;
+  dietary?: string;
   status: MenuItemStatus;
 };

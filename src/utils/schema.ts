@@ -115,6 +115,7 @@ export type MenuItemFormValues = {
   price: string;
   isAvailable: boolean;
   image: File | null;
+  existingImageUrl: string;
 };
 
 export const menuItemInitialValues: MenuItemFormValues = {
@@ -125,6 +126,7 @@ export const menuItemInitialValues: MenuItemFormValues = {
   price: "",
   isAvailable: true,
   image: null,
+  existingImageUrl: "",
 };
 
 export const menuItemSchema = Yup.object({

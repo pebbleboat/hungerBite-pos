@@ -42,6 +42,8 @@ export const API_PATHS = {
     `/outlet/${encodeURIComponent(outletId)}/add-item`,
   menuItems: (outletId: string) =>
     `/outlet/${encodeURIComponent(outletId)}/items`,
+  menuItem: (outletId: string, itemId: string) =>
+    `/outlet/${encodeURIComponent(outletId)}/item/${encodeURIComponent(itemId)}`,
   outletOrders: (outletId: string) =>
     `/outlet/${encodeURIComponent(outletId)}/orders`,
   orderAction: (

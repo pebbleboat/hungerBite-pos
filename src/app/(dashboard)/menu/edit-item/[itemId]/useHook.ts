@@ -6,9 +6,10 @@ import {
 } from "@/app/(dashboard)/menu/utils/menuConstants";
 import {
   formValuesToMenuItemPayload,
+  menuItemToFormValues,
 } from "@/app/(dashboard)/menu/utils/menuFormPayload";
 import { apiErrorMessage } from "@/lib/apiConstant";
-import { addMenuItem } from "@/lib/apis";
+import { getMenuItemById, updateMenuItem } from "@/lib/apis";
 import { showToast } from "@/shared/ToastMessage";
 import useSharedVariables from "@/utils/hooks/useSharedVariables";
 import { queryKeys } from "@/utils/queryKeys";
@@ -17,42 +18,63 @@ import {
   menuItemSchema,
   type MenuItemFormValues,
 } from "@/utils/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
 
 const CATEGORY_OPTIONS = MENU_CATEGORY_OPTIONS.filter((o) => o.value !== "all");
 
 export function useHook() {
   const router = useRouter();
+  const params = useParams();
+  const itemId = String(params.itemId ?? "");
   const queryClient = useQueryClient();
-
   const { selectedOutletId: outletId } = useSharedVariables();
+
+  const {
+    data: menuItem,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: queryKeys.menu.detail(outletId, itemId),
+    queryFn: () => getMenuItemById(outletId, itemId),
+    enabled: Boolean(outletId && itemId),
+  });
+
+  const initialValues = useMemo(
+    () => (menuItem ? menuItemToFormValues(menuItem) : menuItemInitialValues),
+    [menuItem],
+  );
 
   const { mutate: submitItem, isPending: isSubmitting } = useMutation({
     mutationFn: async (values: MenuItemFormValues) =>
-      addMenuItem(outletId, formValuesToMenuItemPayload(values)),
+      updateMenuItem(outletId, itemId, formValuesToMenuItemPayload(values)),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.menu.list(outletId),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.menu.detail(outletId, itemId),
+      });
       showToast({
         type: "success",
-        title: "Item added",
-        subtitle: "Your menu item was saved to the catalogue.",
+        title: "Item updated",
+        subtitle: "Your menu item was saved.",
       });
       router.push("/menu");
     },
     onError: (err) => {
       showToast({
         type: "error",
-        title: apiErrorMessage(err, "Could not add menu item"),
+        title: apiErrorMessage(err, "Could not update menu item"),
       });
     },
   });
 
   const formik = useFormik<MenuItemFormValues>({
-    initialValues: menuItemInitialValues,
+    initialValues,
+    enableReinitialize: true,
     validationSchema: menuItemSchema,
     validateOnBlur: true,
     validateOnChange: true,
@@ -61,7 +83,15 @@ export function useHook() {
     },
   });
 
+  useEffect(() => {
+    if (!outletId) {
+      router.replace("/menu");
+    }
+  }, [outletId, router]);
+
   const handleCancel = () => router.push("/menu");
+
+  const isLoading = Boolean(outletId && itemId) && (isFetching || !menuItem);
 
   return {
     formik,
@@ -69,6 +99,9 @@ export function useHook() {
     dietaryOptions: MENU_DIETARY_OPTIONS,
     handleCancel,
     isSubmitting,
+    isLoading,
+    isError,
     outletId,
+    itemName: menuItem?.name ?? "",
   };
 }

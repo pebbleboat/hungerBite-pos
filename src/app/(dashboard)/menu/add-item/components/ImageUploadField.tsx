@@ -13,6 +13,7 @@ import { FiUploadCloud, FiX } from "react-icons/fi";
 
 type ImageUploadFieldProps = {
   value: File | null;
+  existingImageUrl?: string;
   onChange: (file: File | null) => void;
   onBlur?: () => void;
   errorMessage?: string;
@@ -20,6 +21,7 @@ type ImageUploadFieldProps = {
 
 export default function ImageUploadField({
   value,
+  existingImageUrl = "",
   onChange,
   onBlur,
   errorMessage,
@@ -29,14 +31,13 @@ export default function ImageUploadField({
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    if (!value) {
-      setPreviewUrl("");
-      return;
+    if (value) {
+      const url = URL.createObjectURL(value);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
     }
-    const url = URL.createObjectURL(value);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [value]);
+    setPreviewUrl(existingImageUrl);
+  }, [value, existingImageUrl]);
 
   const openPicker = () => inputRef.current?.click();
 

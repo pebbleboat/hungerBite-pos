@@ -6,6 +6,7 @@ import MenuItemCard from "@/app/(dashboard)/menu/components/MenuItemCard";
 import Button from "@/shared/buttons/Button";
 import EmptyState from "@/shared/EmptyState";
 import Text from "@/shared/heading/Text";
+import ConfirmationModal from "@/shared/modal/ConfirmationModal";
 import { useRouter } from "next/navigation";
 import { FiPlus } from "react-icons/fi";
 import { useHook } from "./useHook";
@@ -24,6 +25,10 @@ export default function MenuPage() {
     isLoading,
     handleEditItem,
     handleDeleteItem,
+    itemToDelete,
+    closeDeleteConfirm,
+    confirmDeleteItem,
+    isDeleting,
   } = useHook();
   const router = useRouter();
   return (
@@ -70,6 +75,24 @@ export default function MenuPage() {
           <AddItemCard onClick={() => router.push("/menu/add-item")} />
         </div>
       </EmptyState>
+
+      <ConfirmationModal
+        title="Delete menu item?"
+        description={
+          itemToDelete
+            ? `"${itemToDelete.name}" will be permanently removed from your menu. This cannot be undone.`
+            : "This item will be permanently removed from your menu."
+        }
+        onSubmit={() => confirmDeleteItem()}
+        styleHeader="flex gap-x-4 !space-y-0 items-center"
+        rightBtnName="Delete Item"
+        leftBtnName="Cancel"
+        type="danger"
+        isOpen={Boolean(itemToDelete)}
+        size="md"
+        isLoading={isDeleting}
+        close={closeDeleteConfirm}
+      />
     </div>
   );
 }

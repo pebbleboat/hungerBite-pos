@@ -1,22 +1,24 @@
+import type { LoginResponse, SignupResponse } from "@/utils/authSession";
+import { MicroService } from "@/utils/enum";
 import { API_PATHS, AUTH_PATHS } from "./apiConstant";
 import axiosInstance from "./axiosInstance";
-import type { LoginResponse, SignupResponse } from "@/utils/authSession";
 import {
-  Order,
-  LoginPayload,
-  SignupPayload,
-  ForgotPasswordPayload,
-  ResetPasswordPayload,
-  CreateOutletPayload,
-  CreateOutletResponse,
   AddMenuItemPayload,
   AddMenuItemResponse,
   CatalogOutlet,
+  CreateOutletPayload,
+  CreateOutletResponse,
+  DeleteMenuItemResponse,
+  ForgotPasswordPayload,
+  LoginPayload,
   MenuItem,
   MenuItemStatus,
+  Order,
   OutletDetail,
+  ResetPasswordPayload,
+  SignupPayload,
+  UpdateMenuItemResponse,
 } from "./types";
-import { MicroService } from "@/utils/enum";
 
 // ----------------------------------------------------------------------------------------------------------
 // -------------------------------------------------- AUTH --------------------------------------------------
@@ -209,6 +211,7 @@ function mapCatalogMenuItem(raw: CatalogMenuItemRecord): MenuItem {
     price: Number(raw.price) || 0,
     imageUrl: raw.image,
     category,
+    dietary: raw.dietary,
     status: normalizeMenuStatus(raw.status),
   };
 }
@@ -219,4 +222,39 @@ export async function getMenuItems(outletId: string): Promise<MenuItem[]> {
   >(API_PATHS.menuItems(outletId));
   if (!Array.isArray(data)) return [];
   return data.map(mapCatalogMenuItem).filter((item) => Boolean(item.id));
+}
+
+export async function getMenuItemById(
+  outletId: string,
+  itemId: string,
+): Promise<MenuItem> {
+  const { data } = await axiosInstance(MicroService.CATALOG).get<
+    CatalogMenuItemRecord
+  >(API_PATHS.menuItem(outletId, itemId));
+  const item = mapCatalogMenuItem(data);
+  if (!item.id) {
+    throw new Error("Menu item not found");
+  }
+  return item;
+}
+
+export async function updateMenuItem(
+  outletId: string,
+  itemId: string,
+  payload: AddMenuItemPayload,
+): Promise<UpdateMenuItemResponse> {
+  const { data } = await axiosInstance(MicroService.CATALOG).patch<
+    UpdateMenuItemResponse
+  >(API_PATHS.menuItem(outletId, itemId), payload);
+  return data;
+}
+
+export async function deleteMenuItem(
+  outletId: string,
+  itemId: string,
+): Promise<DeleteMenuItemResponse> {
+  const { data } = await axiosInstance(MicroService.CATALOG).delete<
+    DeleteMenuItemResponse
+  >(API_PATHS.menuItem(outletId, itemId));
+  return data;
 }
