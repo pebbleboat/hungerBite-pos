@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --brand-50: #eff5ff;
+  --brand-100: #dfeaff;
+  --brand-200: #c5d7fd;
+  --brand-300: #9db8fa;
+  --brand-400: #6e91f6;
+  --brand-500: #3f6df0;
+  --brand-600: #155eef;
+  --brand-700: #1149cc;
+  --brand-800: #153ca3;
+  --brand-900: #16367f;
+  --brand-950: #0e214d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --color-primary: var(--brand-600);
+  --color-secondary: #6b7280;
+  --font-sans: var(--font-manrope);
+  --background-image-onboardingBg: linear-gradient(
+    180deg,
+    #013190 0%,
+    #011640 100%
+  );
+  --background-image-bannerOverlay: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    #000 110%
+  );
+}
+
+html {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+.modalLogo {
+  backdrop-filter: blur(2px);
+  background-color: rgba(235, 235, 235, 0.6);
+  border-radius: 10px;
+  opacity: 1;
+}
