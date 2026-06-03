@@ -30,11 +30,10 @@ import { storageKeys } from "@/utils/enum";
 import { setLocalItem } from "@/utils/localstorage";
 
 function resolveOutletId(outlet: CreateOutletResponse): string {
-  const id = outlet._id ?? outlet.id;
-  if (id == null || id === "") {
+  if (!outlet.id) {
     throw new Error("Outlet id missing from create-outlet response");
   }
-  return String(id);
+  return outlet.id;
 }
 
 export function useHook() {

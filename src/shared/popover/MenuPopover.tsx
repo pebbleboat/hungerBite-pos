@@ -1,157 +1,110 @@
 "use client";
 
-import {
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  MenuSeparator,
-} from "@headlessui/react";
+import Text from "@/shared/heading/Text";
 import clsx from "clsx";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
+import Button from "../buttons/Button";
 
-type MenuItemsAnchor = NonNullable<ComponentProps<typeof MenuItems>["anchor"]>;
+export type MenuPopoverItem = {
+  id: string;
+  label: string;
+  onClick: () => void;
+  icon?: ReactNode;
+  variant?: "default" | "danger";
+  disabled?: boolean;
+};
 
-export type MenuPopoverItem =
-  | {
-      type: "item";
-      id: string;
-      label: string;
-      onClick: () => void;
-      icon?: ReactNode;
-      variant?: "default" | "danger";
-      disabled?: boolean;
-      keepMenuOpen?: boolean;
-    }
-  | { type: "separator"; id: string };
+export type MenuPopoverHeader = {
+  title: string;
+  subtitle?: string;
+};
 
 export interface MenuPopoverProps {
   children: ReactNode;
   items: MenuPopoverItem[];
-  menuButtonClassName?: string;
-  menuItemsClassName?: string;
-  anchor?: MenuItemsAnchor;
+  header?: MenuPopoverHeader;
+  open: boolean;
+  onClose: () => void;
   className?: string;
-  onMenuButtonClick?: () => void;
+  panelClassName?: string;
 }
-
-const defaultButtonClasses =
-  "flex w-full cursor-pointer rounded-lg outline-none transition-colors cursor-pointer";
-
-const defaultPanelClasses =
-  "z-50 mt-2 w-52 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg outline-none transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0";
 
 export default function MenuPopover({
   children,
   items,
-  menuButtonClassName,
-  menuItemsClassName,
-  anchor = "bottom end",
+  header,
+  open,
+  onClose,
   className,
-  onMenuButtonClick,
+  panelClassName,
 }: MenuPopoverProps) {
   return (
-    <Menu as="div" className={clsx("relative", className)}>
-      <MenuButton
-        as="div"
-        className={clsx(defaultButtonClasses, menuButtonClassName)}
-        onClick={() => onMenuButtonClick?.()}
-      >
-        {children}
-      </MenuButton>
+    <div className={clsx("relative", className)}>
+      {children}
 
-      <MenuItems
-        transition
-        anchor={anchor}
-        modal={false}
-        className={clsx(defaultPanelClasses, menuItemsClassName)}
-      >
-        {items.map((entry) => {
-          if (entry.type === "separator") {
-            return (
-              <MenuSeparator key={entry.id} className="h-px bg-gray-100" />
-            );
-          }
-
-          const danger = entry.variant === "danger";
-          const disabled = entry.disabled === true;
-
-          // Headless `MenuItem` always closes the menu on activate; drill-in rows must
-          // not use it — plain `role="menuitem"` buttons skip that behavior.
-          if (entry.keepMenuOpen) {
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                disabled={disabled}
-                onClick={() => {
-                  if (!disabled) entry.onClick();
-                }}
-                className={clsx(
-                  "flex w-full items-center gap-2 px-4 py-2 text-left text-sm outline-none",
-                  disabled
-                    ? "cursor-not-allowed text-gray-300"
-                    : "cursor-pointer text-gray-700 hover:bg-gray-50 focus-visible:bg-gray-50",
-                )}
-              >
-                {entry.icon != null && (
-                  <span
-                    className={clsx(
-                      "shrink-0 [&_svg]:h-4 [&_svg]:w-4",
-                      disabled ? "text-gray-300" : "text-gray-500",
-                    )}
+      {open ? (
+        <>
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={onClose}
+          />
+          <div
+            className={clsx(
+              "absolute right-0 top-11 z-20 w-56 rounded-xl border border-gray-100 bg-white p-2 shadow-lg",
+              panelClassName,
+            )}
+          >
+            {header ? (
+              <div className="border-b border-gray-100 px-3 py-2">
+                <Text
+                  as="p"
+                  size="sm"
+                  type="semibold"
+                  className="text-gray-900"
+                >
+                  {header.title}
+                </Text>
+                {header.subtitle ? (
+                  <Text
+                    as="p"
+                    size="xxs"
+                    variant="secondary"
+                    className="mt-0.5"
                   >
-                    {entry.icon}
-                  </span>
-                )}
-                {entry.label}
-              </button>
-            );
-          }
+                    {header.subtitle}
+                  </Text>
+                ) : null}
+              </div>
+            ) : null}
 
-          return (
-            <MenuItem key={entry.id}>
-              {({ focus, close }) => (
-                <button
-                  type="button"
-                  disabled={disabled}
+            {items.map((entry, index) => {
+              const danger = entry.variant === "danger";
+              return (
+                <Button
+                  variant="tertiary"
+                  btnName={entry.label}
+                  icon={entry.icon}
+                  size="xs"
+                  fullWidth
+                  disabled={entry.disabled}
                   onClick={() => {
-                    if (disabled) return;
+                    if (entry.disabled) return;
                     entry.onClick();
-                    close();
                   }}
                   className={clsx(
-                    "flex w-full items-center gap-2 px-4 py-2 text-left text-sm",
-                    disabled
-                      ? "cursor-not-allowed text-gray-300"
-                      : "cursor-pointer",
-                    !disabled && (danger ? "text-red-600" : "text-gray-700"),
-                    !disabled && focus && (danger ? "bg-red-50" : "bg-gray-50"),
+                    "justify-start !font-normal",
+                    index === 0 && "mt-1",
+                    danger && "text-red-600 hover:bg-red-50",
                   )}
-                >
-                  {entry.icon != null && (
-                    <span
-                      className={clsx(
-                        "shrink-0 [&_svg]:h-4 [&_svg]:w-4",
-                        disabled
-                          ? "text-gray-300"
-                          : danger
-                            ? "text-red-600"
-                            : "text-gray-500",
-                      )}
-                    >
-                      {entry.icon}
-                    </span>
-                  )}
-                  {entry.label}
-                </button>
-              )}
-            </MenuItem>
-          );
-        })}
-      </MenuItems>
-    </Menu>
+                />
+              );
+            })}
+          </div>
+        </>
+      ) : null}
+    </div>
   );
 }

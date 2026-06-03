@@ -17,6 +17,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import type { HeaderVariant, NavOverlay } from "./constants";
+import {
+  isClockedOutShellPath,
+  MANAGE_OUTLETS_PATH,
+} from "@/utils/routes";
 
 function resolveProfile(): AuthUser | null {
   const token = getAccessToken();
@@ -48,7 +52,8 @@ export function useHook({ variant: variantProp }: UseHeaderOptions = {}) {
   const queryClient = useQueryClient();
 
   const variant: HeaderVariant =
-    variantProp ?? (pathname === "/clock-in" ? "clock-in" : "dashboard");
+    variantProp ??
+    (isClockedOutShellPath(pathname) ? "clock-in" : "dashboard");
   const isClockIn = variant === "clock-in";
 
   const profile = useMemo(resolveProfile, []);
@@ -59,6 +64,13 @@ export function useHook({ variant: variantProp }: UseHeaderOptions = {}) {
     queryFn: () => getOutletById(outletId),
     enabled: Boolean(outletId),
   });
+
+  const isClockedOut = outlet?.status !== "open";
+  const showManageOutlet =
+    isClockedOut &&
+    !pathname.startsWith(MANAGE_OUTLETS_PATH) &&
+    Boolean(outletId) &&
+    !isOutletLoading;
 
   const [activeOverlay, setActiveOverlay] = useState<NavOverlay | null>(null);
 
@@ -133,9 +145,9 @@ export function useHook({ variant: variantProp }: UseHeaderOptions = {}) {
     setActiveOverlay((v) => (v === "menu" ? null : "menu"));
   }, []);
 
-  const handleChangeOutlet = useCallback(() => {
+  const handleManageOutlet = useCallback(() => {
     closeOverlay();
-    router.push("/select-outlet");
+    router.push(MANAGE_OUTLETS_PATH);
   }, [closeOverlay, router]);
 
   const userName =
@@ -161,8 +173,9 @@ export function useHook({ variant: variantProp }: UseHeaderOptions = {}) {
     activeOverlay,
     closeOverlay,
     openOverlay,
+    showManageOutlet,
     toggleAccountMenu,
-    handleChangeOutlet,
+    handleManageOutlet,
     toggleAcceptingOrders,
     isTogglingOrders,
     endDay,

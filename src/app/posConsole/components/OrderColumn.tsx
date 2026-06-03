@@ -78,7 +78,7 @@ export default function OrderColumn({
         ) : (
           orders.map((order) => (
             <OrderCard
-              key={order._id}
+              key={order.id}
               order={order}
               column={columnId}
               onAccept={onAccept}

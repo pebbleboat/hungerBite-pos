@@ -2,6 +2,7 @@
 
 import { apiErrorMessage } from "@/lib/apiConstant";
 import { deleteMenuItem, getMenuItems, getOutletById } from "@/lib/apis";
+import { catalogRecordToMenuItem } from "@/app/(dashboard)/menu/utils/menuFormPayload";
 import type { MenuItem } from "@/lib/types";
 import { showToast } from "@/shared/ToastMessage";
 import useSharedVariables from "@/utils/hooks/useSharedVariables";
@@ -27,7 +28,11 @@ export function useHook() {
 
   const { data: items = [], isFetching: isMenuFetching } = useQuery({
     queryKey: queryKeys.menu.list(selectedOutletId),
-    queryFn: () => getMenuItems(selectedOutletId),
+    queryFn: async () => {
+      const data = await getMenuItems(selectedOutletId);
+      if (!Array.isArray(data)) return [];
+      return data.map(catalogRecordToMenuItem);
+    },
     enabled: Boolean(selectedOutletId),
   });
 

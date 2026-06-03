@@ -52,6 +52,10 @@ export const API_PATHS = {
     action: "accept" | "reject",
   ) =>
     `/outlet/${encodeURIComponent(outletId)}/order/${encodeURIComponent(orderId)}/${action}`,
+  orderReady: (outletId: string, orderId: string) =>
+    `/outlet/${encodeURIComponent(outletId)}/order/${encodeURIComponent(orderId)}/ready`,
+  orderCollect: (outletId: string, orderId: string) =>
+    `/outlet/${encodeURIComponent(outletId)}/order/${encodeURIComponent(orderId)}/collect-order`,
 } as const;
 
 

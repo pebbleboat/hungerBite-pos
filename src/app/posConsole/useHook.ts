@@ -1,10 +1,16 @@
-import { getOutletOrders, postOrderAction } from "@/lib/apis";
+import {
+  getOutletOrders,
+  postOrderAction,
+  postOrderCollect,
+  postOrderReady,
+} from "@/lib/apis";
+import { showToast } from "@/shared/ToastMessage";
 import {
   BOARD_COLUMNS,
-  groupOrdersByColumn,
+  getOrderTotal,
   type BoardColumnId,
 } from "@/app/posConsole/utils/orderBoard";
-import type { Order } from "@/lib/types";
+import type { OutletOrdersBoard } from "@/lib/types";
 import useSharedVariables from "@/utils/hooks/useSharedVariables";
 import { queryKeys } from "@/utils/queryKeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +19,13 @@ import { io, type Socket } from "socket.io-client";
 import { apiErrorMessage } from "@/lib/apiConstant";
 
 export type SocketStatus = "idle" | "connecting" | "connected" | "error";
+
+const EMPTY_ORDERS_BOARD: OutletOrdersBoard = {
+  pending: [],
+  preparing: [],
+  ready: [],
+  history: [],
+};
 
 function diffMinutes(from?: string | null, to?: string | null): number {
   if (!from || !to) return 0;
@@ -41,18 +54,27 @@ export function useHook() {
   const [socketStatus, setSocketStatus] = useState<SocketStatus>("idle");
 
   const {
-    data: orders = [],
+    data: ordersBoard = EMPTY_ORDERS_BOARD,
     error: ordersError,
     isLoading,
     isFetching,
     refetch,
   } = useQuery({
     queryKey: queryKeys.orders.outlet(outletId),
-    queryFn: () => getOutletOrders(outletId),
+    queryFn: async () => {
+      const data = await getOutletOrders(outletId);
+      if (!data) return EMPTY_ORDERS_BOARD;
+      return {
+        pending: data.pending ?? [],
+        preparing: data.preparing ?? [],
+        ready: data.ready ?? [],
+        history: data.history ?? [],
+      };
+    },
     enabled: Boolean(outletId),
   });
 
-  const grouped = useMemo(() => groupOrdersByColumn(orders), [orders]);
+  const grouped = ordersBoard;
 
   const columnCounts = useMemo(
     () =>
@@ -68,10 +90,7 @@ export function useHook() {
 
   const liveRevenue = useMemo(() => {
     const earning = [...grouped.ready, ...grouped.history];
-    return earning.reduce(
-      (sum, o) => sum + (o.total ?? o.quantity * 12.5),
-      0,
-    );
+    return earning.reduce((sum, o) => sum + getOrderTotal(o), 0);
   }, [grouped]);
 
   const avgPrepTimeLabel = useMemo(() => {
@@ -84,7 +103,13 @@ export function useHook() {
     return formatPrepLabel(avg);
   }, [grouped]);
 
-  const { mutate: act, isPending: isActionPending } = useMutation({
+  const invalidateOrdersQuery = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.orders.outlet(outletId),
+    });
+  }, [queryClient, outletId]);
+
+  const { mutate: act, isPending: isActPending } = useMutation({
     mutationFn: ({
       orderId,
       action,
@@ -92,9 +117,33 @@ export function useHook() {
       orderId: string;
       action: "accept" | "reject";
     }) => postOrderAction(outletId, orderId, action),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.orders.outlet(outletId),
+    onSuccess: invalidateOrdersQuery,
+    onError: (err) => {
+      showToast({
+        type: "error",
+        title: apiErrorMessage(err, "Could not update order"),
+      });
+    },
+  });
+
+  const { mutate: markReady, isPending: isMarkReadyPending } = useMutation({
+    mutationFn: (orderId: string) => postOrderReady(outletId, orderId),
+    onSuccess: invalidateOrdersQuery,
+    onError: (err) => {
+      showToast({
+        type: "error",
+        title: apiErrorMessage(err, "Could not mark order ready"),
+      });
+    },
+  });
+
+  const { mutate: collectOrder, isPending: isCollectPending } = useMutation({
+    mutationFn: (orderId: string) => postOrderCollect(outletId, orderId),
+    onSuccess: invalidateOrdersQuery,
+    onError: (err) => {
+      showToast({
+        type: "error",
+        title: apiErrorMessage(err, "Could not mark order delivered"),
       });
     },
   });
@@ -103,11 +152,7 @@ export function useHook() {
     ? apiErrorMessage(ordersError, "Failed to load orders")
     : null;
 
-  const invalidateOrders = useCallback(() => {
-    void queryClient.invalidateQueries({
-      queryKey: queryKeys.orders.outlet(outletId),
-    });
-  }, [queryClient, outletId]);
+  const invalidateOrders = invalidateOrdersQuery;
 
   const loadOrders = useCallback(() => {
     void refetch();
@@ -153,15 +198,11 @@ export function useHook() {
     loadOrders,
     handleAccept: (orderId: string) => act({ orderId, action: "accept" }),
     handleReject: (orderId: string) => act({ orderId, action: "reject" }),
-    handleMarkReady: (_orderId: string) => {
-      /* TODO: wire when POS API supports preparing → ready */
-    },
-    handleMarkDelivered: (_orderId: string) => {
-      /* TODO: wire when POS API supports ready → delivered */
-    },
+    handleMarkReady: (orderId: string) => markReady(orderId),
+    handleMarkDelivered: (orderId: string) => collectOrder(orderId),
     isOrdersLoading: isLoading || isFetching,
-    isActionPending,
+    isActionPending: isActPending || isMarkReadyPending || isCollectPending,
   };
 }
 
-export type { Order };
+export type { Order } from "@/lib/types";

@@ -14,9 +14,10 @@ import {
 import { queryKeys } from "@/utils/queryKeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { setLocalItem } from "@/utils/localstorage";
 import { storageKeys } from "@/utils/enum";
+import useSharedVariables from "@/utils/hooks/useSharedVariables";
 
 export function useHook() {
   const router = useRouter();
@@ -33,9 +34,28 @@ export function useHook() {
     profile?.email?.split("@")[0] ??
     "there";
 
+  const { selectedOutletId } = useSharedVariables();
+
+  // While clocked in (current outlet open) switching outlets is not allowed.
+  const { data: currentOutlet } = useQuery({
+    queryKey: queryKeys.outlets.detail(selectedOutletId),
+    queryFn: () => getOutletById(selectedOutletId),
+    enabled: Boolean(accessToken && selectedOutletId),
+  });
+
+  useEffect(() => {
+    if (selectingId) return;
+    if (accessToken && currentOutlet?.status === "open") {
+      router.replace("/");
+    }
+  }, [accessToken, currentOutlet?.status, selectingId, router]);
+
   const { data: outlets = [], isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.outlets.list(),
-    queryFn: getOutlets,
+    queryFn: async () => {
+      const data = await getOutlets();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: Boolean(tempToken || accessToken),
   });
 

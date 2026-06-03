@@ -107,6 +107,49 @@ export const onboardingOutletSchema = Yup.object({
     .required("Phone is required"),
 });
 
+export type OutletEditFormValues = {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  image: File | null;
+  existingImageUrl: string;
+};
+
+export const outletEditInitialValues: OutletEditFormValues = {
+  name: "",
+  address: "",
+  city: "",
+  phone: "",
+  image: null,
+  existingImageUrl: "",
+};
+
+export const outletEditSchema = Yup.object({
+  name: Yup.string().trim().required("Outlet name is required"),
+  address: Yup.string().trim().required("Address is required"),
+  city: Yup.string().trim().required("City is required"),
+  phone: Yup.string()
+    .trim()
+    .matches(/^[+]?[\d\s()-]{7,}$/, "Enter a valid phone number")
+    .required("Phone is required"),
+  image: Yup.mixed<File>()
+    .nullable()
+    .test(
+      "size",
+      "Image must be 5MB or smaller",
+      (file) => !file || (file instanceof File && file.size <= 5 * 1024 * 1024),
+    )
+    .test(
+      "type",
+      "Only JPG or PNG images are supported",
+      (file) =>
+        !file ||
+        (file instanceof File &&
+          ["image/jpeg", "image/png", "image/jpg"].includes(file.type)),
+    ),
+});
+
 export type MenuItemFormValues = {
   name: string;
   description: string;

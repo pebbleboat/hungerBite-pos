@@ -1,18 +1,62 @@
-export type Order = {
-  _id: string;
-  item: string;
+export type OrderItemLine = {
+  id: string;
   quantity: number;
+  name: string;
+  description?: string;
+  price: number;
+  status?: string;
+  dietary?: string;
+  category?: string;
+  outletId?: string;
+};
+
+export type Order = {
+  id: string;
   status: string;
   outletId: string;
   customerName?: string;
   total?: number;
-  items?: { name: string; quantity: number; modifiers?: string[] }[];
+  items: OrderItemLine[];
   createdAt?: string;
   updatedAt?: string;
   acceptedAt?: string;
   readyAt?: string;
   type?: "pickup" | "dine-in" | "delivery";
 };
+
+/** Raw order object from outlet orders API */
+export type OutletOrderRecord = {
+  id: string;
+  status: string;
+  outletId: string;
+  items: OrderItemLine[];
+  __v?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  acceptedAt?: string;
+  readyAt?: string;
+  type?: Order["type"];
+};
+
+/** GET /outlet/:outletId/orders response */
+export type OutletOrdersApiResponse = {
+  pending: OutletOrderRecord[];
+  preparing: OutletOrderRecord[];
+  ready: OutletOrderRecord[];
+  history?: OutletOrderRecord[];
+};
+
+export type OutletOrderBoardColumnId =
+  | "pending"
+  | "preparing"
+  | "ready"
+  | "history";
+
+/** Orders grouped for POS kanban columns */
+export type OutletOrdersBoard = Record<
+  OutletOrderBoardColumnId,
+  Order[]
+>;
 
 export type LoginPayload = {
   email: string;
@@ -46,10 +90,28 @@ export type CreateOutletPayload = {
   phone: string;
 };
 
+/** PATCH /outlet/:outletId body */
+export type UpdateOutletPayload = {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+};
+
 export type CreateOutletResponse = {
-  _id?: string;
-  id?: string;
+  id: string;
   name?: string;
+};
+
+export type CatalogMenuItemRecord = {
+  id: string;
+  name: string;
+  description?: string;
+  price?: number;
+  status?: string;
+  category?: string;
+  image?: string;
+  dietary?: string;
 };
 
 export type CatalogOutlet = {
@@ -58,6 +120,7 @@ export type CatalogOutlet = {
   address?: string;
   city?: string;
   phone?: string;
+  image?: string;
   status?: string;
   isAcceptingOrders?: boolean;
 };
@@ -68,6 +131,7 @@ export type OutletDetail = {
   address?: string;
   city?: string;
   phone?: string;
+  image?: string;
   status?: string;
   isAcceptingOrders?: boolean;
 };

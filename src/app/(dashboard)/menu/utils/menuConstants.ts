@@ -14,7 +14,7 @@ export const MENU_DIETARY_OPTIONS = [
   { value: "non_vegetarian", label: "Non-Vegetarian" },
   { value: "vegan", label: "Vegan" },
   { value: "eggetarian", label: "Eggetarian" },
-] as const;
+];
 
 export const MENU_STATUS_OPTIONS: { value: "all" | MenuItemStatus; label: string }[] = [
   { value: "all", label: "All Statuses" },

@@ -5,6 +5,7 @@ import {
   MENU_DIETARY_OPTIONS,
 } from "@/app/(dashboard)/menu/utils/menuConstants";
 import {
+  catalogRecordToMenuItem,
   formValuesToMenuItemPayload,
   menuItemToFormValues,
 } from "@/app/(dashboard)/menu/utils/menuFormPayload";
@@ -38,7 +39,10 @@ export function useHook() {
     isError,
   } = useQuery({
     queryKey: queryKeys.menu.detail(outletId, itemId),
-    queryFn: () => getMenuItemById(outletId, itemId),
+    queryFn: async () => {
+      const data = await getMenuItemById(outletId, itemId);
+      return catalogRecordToMenuItem(data);
+    },
     enabled: Boolean(outletId && itemId),
   });
 
@@ -91,7 +95,8 @@ export function useHook() {
 
   const handleCancel = () => router.push("/menu");
 
-  const isLoading = Boolean(outletId && itemId) && (isFetching || !menuItem);
+  const isLoading =
+    Boolean(outletId && itemId) && !isError && (isFetching || !menuItem);
 
   return {
     formik,

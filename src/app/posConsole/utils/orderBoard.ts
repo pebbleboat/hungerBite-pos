@@ -54,8 +54,66 @@ export function formatOrderCode(orderId: string): string {
   return `#HB-${suffix || "0000"}`;
 }
 
+export function getOrderTotal(order: Order): number {
+  if (order.total != null && Number.isFinite(order.total)) {
+    return order.total;
+  }
+  const sum = order.items.reduce((acc, line) => {
+    const price = Number(line.price);
+    const qty = Number(line.quantity);
+    if (!Number.isFinite(price) || !Number.isFinite(qty)) return acc;
+    return acc + price * qty;
+  }, 0);
+  return Number.isFinite(sum) ? sum : 0;
+}
+
+export type HistoryStatusDisplay = {
+  label: string;
+  toneClass: string;
+  amountClass: string;
+};
+
+export function getHistoryStatusDisplay(status: string): HistoryStatusDisplay {
+  const s = status.toLowerCase();
+
+  if (s === "rejected") {
+    return {
+      label: "Rejected",
+      toneClass: "text-red-600",
+      amountClass: "text-gray-500",
+    };
+  }
+
+  if (s === "delivered") {
+    return {
+      label: "Delivered",
+      toneClass: "text-emerald-600",
+      amountClass: "text-emerald-600",
+    };
+  }
+
+  if (s === "collected" || s === "completed") {
+    return {
+      label: "Collected",
+      toneClass: "text-brand-700",
+      amountClass: "text-emerald-600",
+    };
+  }
+
+  const label = status.trim()
+    ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+    : "Completed";
+
+  return {
+    label,
+    toneClass: "text-gray-600",
+    amountClass: "text-gray-700",
+  };
+}
+
 export function formatItemsSummary(order: Order): string {
-  return `${order.quantity}x ${order.item}`;
+  if (!order.items.length) return "—";
+  return order.items.map((line) => `${line.quantity}x ${line.name}`).join(", ");
 }
 
 export { formatINR as formatCurrency } from "@/utils/functions";

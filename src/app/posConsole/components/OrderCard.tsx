@@ -7,6 +7,8 @@ import {
   formatCurrency,
   formatHistoryTime,
   formatOrderCode,
+  getHistoryStatusDisplay,
+  getOrderTotal,
   type BoardColumnId,
 } from "@/app/posConsole/utils/orderBoard";
 import {
@@ -17,7 +19,7 @@ import {
   isPreparingUrgent,
 } from "@/app/posConsole/utils/timeHelpers";
 import clsx from "clsx";
-import { FiAlertCircle, FiCheck, FiClock } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiClock, FiX } from "react-icons/fi";
 
 type OrderCardProps = {
   order: Order;
@@ -30,17 +32,8 @@ type OrderCardProps = {
 };
 
 function formatItemLines(order: Order): string {
-  if (order.items?.length) {
-    return order.items
-      .map((line) => {
-        const mods = line.modifiers?.length
-          ? ` (${line.modifiers.join(", ")})`
-          : "";
-        return `${line.quantity}x ${line.name}${mods}`;
-      })
-      .join(", ");
-  }
-  return `${order.quantity}x ${order.item}`;
+  if (!order.items.length) return "—";
+  return order.items.map((line) => `${line.quantity}x ${line.name}`).join(", ");
 }
 
 function customerOf(order: Order): string {
@@ -48,11 +41,13 @@ function customerOf(order: Order): string {
 }
 
 function totalOf(order: Order): number {
-  return order.total ?? order.quantity * 12.5;
+  return getOrderTotal(order);
 }
 
 function HistoryCard({ order }: { order: Order }) {
-  const isDelivered = order.status.toLowerCase() === "delivered";
+  const statusDisplay = getHistoryStatusDisplay(order.status);
+  const isRejected = order.status.toLowerCase() === "rejected";
+
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
       <div className="flex items-start justify-between gap-2">
@@ -63,16 +58,20 @@ function HistoryCard({ order }: { order: Order }) {
           variant="quaternary"
           className="tracking-wide"
         >
-          {formatOrderCode(order._id)}
+          {formatOrderCode(order.id)}
         </Text>
         <span
           className={clsx(
             "inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide",
-            isDelivered ? "text-emerald-600" : "text-brand-700",
+            statusDisplay.toneClass,
           )}
         >
-          <FiCheck className="h-3 w-3" strokeWidth={3} />
-          {isDelivered ? "Delivered" : "Collected"}
+          {isRejected ? (
+            <FiX className="h-3 w-3" strokeWidth={3} />
+          ) : (
+            <FiCheck className="h-3 w-3" strokeWidth={3} />
+          )}
+          {statusDisplay.label}
         </span>
       </div>
       <Text
@@ -84,7 +83,12 @@ function HistoryCard({ order }: { order: Order }) {
         {customerOf(order)}
       </Text>
       <div className="mt-1 flex items-center justify-between gap-2">
-        <Text as="span" size="sm" type="semibold" className="text-emerald-600">
+        <Text
+          as="span"
+          size="sm"
+          type="semibold"
+          className={statusDisplay.amountClass}
+        >
           {formatCurrency(totalOf(order))}
         </Text>
         <Text as="span" size="xxs" variant="tertiary">
@@ -127,7 +131,7 @@ export default function OrderCard({
           type="semibold"
           className="tracking-wide text-gray-500"
         >
-          {formatOrderCode(order._id)}
+          {formatOrderCode(order.id)}
         </Text>
 
         {column === "pending" ? (
@@ -200,7 +204,7 @@ export default function OrderCard({
             size="sm"
             btnName="Accept"
             className="rounded-lg! bg-brand-950! py-2.5! text-white! hover:bg-brand-900!"
-            onClick={() => onAccept?.(order._id)}
+            onClick={() => onAccept?.(order.id)}
             disabled={isActionPending}
             isLoading={isActionPending}
           />
@@ -211,7 +215,7 @@ export default function OrderCard({
             variant="secondary"
             btnName="Reject"
             className="rounded-lg! border-gray-200! bg-white! py-2.5! text-gray-700!"
-            onClick={() => onReject?.(order._id)}
+            onClick={() => onReject?.(order.id)}
             disabled={isActionPending}
           />
         </div>
@@ -225,8 +229,9 @@ export default function OrderCard({
           variant="secondary"
           btnName="Mark Ready"
           className="mt-4! rounded-lg! border-brand-950! bg-white! py-2.5! text-brand-950! hover:bg-brand-50!"
-          onClick={() => onMarkReady?.(order._id)}
+          onClick={() => onMarkReady?.(order.id)}
           disabled={isActionPending}
+          isLoading={isActionPending}
         />
       ) : null}
 
@@ -237,7 +242,7 @@ export default function OrderCard({
           size="sm"
           btnName="Mark Delivered"
           className="mt-4! rounded-lg! bg-teal-700! py-2.5! text-white! hover:bg-teal-800!"
-          onClick={() => onMarkDelivered?.(order._id)}
+          onClick={() => onMarkDelivered?.(order.id)}
           disabled={isActionPending}
           isLoading={isActionPending}
         />

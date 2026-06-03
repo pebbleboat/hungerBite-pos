@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { NAV_ITEMS, type HeaderVariant } from "./constants";
 import { useHook } from "./useHook";
+import MenuPopover from "@/shared/popover/MenuPopover";
 
 type HeaderProps = {
   variant?: HeaderVariant;
@@ -36,7 +37,8 @@ export default function Header({ variant }: HeaderProps) {
     closeOverlay,
     openOverlay,
     toggleAccountMenu,
-    handleChangeOutlet,
+    showManageOutlet,
+    handleManageOutlet,
     toggleAcceptingOrders,
     isTogglingOrders,
     endDay,
@@ -49,35 +51,21 @@ export default function Header({ variant }: HeaderProps) {
     <header
       className={clsx(
         "sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-gray-200/80 bg-white",
-        isClockIn ? "px-6 py-4 lg:px-10" : "px-4 py-3 lg:px-6",
+        "px-6 py-4 lg:px-10",
       )}
     >
       <div className="flex min-w-0 items-center gap-6">
-        {isClockIn ? (
-          <div className="flex items-center">
-            <SvgLogo className="h-8 w-auto sm:h-10" />
-            <Text
-              as="span"
-              size="lg"
-              type="bold"
-              className="-ml-1 text-brand-950"
-            >
-              HungerBite
-            </Text>
-          </div>
-        ) : (
-          <Link href="/" className="flex items-center">
-            <SvgLogo className="h-8 w-auto sm:h-9" />
-            <Text
-              as="span"
-              size="base"
-              type="bold"
-              className="-ml-1 text-brand-950"
-            >
-              Hungerbite
-            </Text>
-          </Link>
-        )}
+        <div className="flex items-center">
+          <SvgLogo className="h-8 w-auto sm:h-10" />
+          <Text
+            as="span"
+            size="lg"
+            type="bold"
+            className="-ml-1 text-brand-950"
+          >
+            HungerBite
+          </Text>
+        </div>
 
         {!isClockIn ? (
           <nav className="hidden items-center gap-5 md:flex">
@@ -173,84 +161,55 @@ export default function Header({ variant }: HeaderProps) {
             <FiSettings className="h-5 w-5" />
           </button>
         ) : null}
-
-        {isClockIn ? (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800">
+        <MenuPopover
+          open={activeOverlay === "menu"}
+          onClose={closeOverlay}
+          header={{
+            title: userName,
+            subtitle: userEmail,
+          }}
+          items={[
+            ...(showManageOutlet
+              ? [
+                  {
+                    id: "manage-outlet",
+                    label: "Manage outlet",
+                    icon: <FiShoppingBag className="h-4 w-4" />,
+                    onClick: handleManageOutlet,
+                  },
+                ]
+              : []),
+            ...(!isClockIn
+              ? [
+                  {
+                    id: "end-day",
+                    label: "End day",
+                    icon: <FiMoon className="h-4 w-4" />,
+                    onClick: () => openOverlay("endDay"),
+                  },
+                ]
+              : []),
+            {
+              id: "logout",
+              label: "Logout",
+              icon: <FiLogOut className="h-4 w-4" />,
+              variant: "danger" as const,
+              onClick: () => openOverlay("logout"),
+            },
+          ]}
+        >
+          <button
+            type="button"
+            onClick={toggleAccountMenu}
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-brand-950 text-xs font-semibold text-white hover:bg-brand-900"
+            aria-label="Account menu"
+          >
             {initials}
-          </div>
-        ) : (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={toggleAccountMenu}
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-950 text-xs font-semibold text-white hover:bg-brand-900"
-              aria-label="Account menu"
-            >
-              {initials}
-            </button>
-
-            {activeOverlay === "menu" ? (
-              <>
-                <button
-                  type="button"
-                  aria-hidden
-                  tabIndex={-1}
-                  className="fixed inset-0 z-10 cursor-default"
-                  onClick={closeOverlay}
-                />
-                <div className="absolute right-0 top-11 z-20 w-56 rounded-xl border border-gray-100 bg-white p-2 shadow-lg">
-                  <div className="border-b border-gray-100 px-3 py-2">
-                    <Text
-                      as="p"
-                      size="sm"
-                      type="semibold"
-                      className="text-gray-900"
-                    >
-                      {userName}
-                    </Text>
-                    {userEmail ? (
-                      <Text
-                        as="p"
-                        size="xxs"
-                        variant="secondary"
-                        className="mt-0.5"
-                      >
-                        {userEmail}
-                      </Text>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleChangeOutlet}
-                    className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <FiShoppingBag className="h-4 w-4" />
-                    Change outlet
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openOverlay("endDay")}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <FiMoon className="h-4 w-4" />
-                    End day
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openOverlay("logout")}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <FiLogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        )}
+          </button>
+        </MenuPopover>
       </div>
 
-      {!isClockIn ? (
+      {showOrderControls ? (
         <>
           <ConfirmationModal
             title="Stop accepting orders?"
@@ -279,36 +238,38 @@ export default function Header({ variant }: HeaderProps) {
             isLoading={isTogglingOrders}
             close={closeOverlay}
           />
-
-          <ConfirmationModal
-            title="End day for this outlet?"
-            description="This closes your shift for today. You will need to clock in again to resume accepting orders."
-            onSubmit={() => endDay()}
-            styleHeader="flex gap-x-4 !space-y-0"
-            rightBtnName="End Day"
-            leftBtnName="Cancel"
-            type="danger"
-            isOpen={activeOverlay === "endDay"}
-            size="md"
-            isLoading={isEndingDay}
-            close={closeOverlay}
-          />
-
-          <ConfirmationModal
-            title="Confirm Logout"
-            description="Are you sure you want to log out?"
-            onSubmit={() => confirmLogout()}
-            styleHeader="flex gap-x-4 !space-y-0 items-center"
-            rightBtnName="Yes, Logout"
-            leftBtnName="Back"
-            type="danger"
-            isOpen={activeOverlay === "logout"}
-            size="md"
-            isLoading={isLoggingOut}
-            close={closeOverlay}
-          />
         </>
       ) : null}
+
+      {!isClockIn ? (
+        <ConfirmationModal
+          title="End day for this outlet?"
+          description="This closes your shift for today. You will need to clock in again to resume accepting orders."
+          onSubmit={() => endDay()}
+          styleHeader="flex gap-x-4 !space-y-0"
+          rightBtnName="End Day"
+          leftBtnName="Cancel"
+          type="danger"
+          isOpen={activeOverlay === "endDay"}
+          size="md"
+          isLoading={isEndingDay}
+          close={closeOverlay}
+        />
+      ) : null}
+
+      <ConfirmationModal
+        title="Confirm Logout"
+        description="Are you sure you want to log out?"
+        onSubmit={() => confirmLogout()}
+        styleHeader="flex gap-x-4 !space-y-0 items-center"
+        rightBtnName="Yes, Logout"
+        leftBtnName="Back"
+        type="danger"
+        isOpen={activeOverlay === "logout"}
+        size="md"
+        isLoading={isLoggingOut}
+        close={closeOverlay}
+      />
     </header>
   );
 }

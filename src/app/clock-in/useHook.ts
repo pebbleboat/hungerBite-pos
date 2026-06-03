@@ -118,7 +118,7 @@ export function useHook() {
   }, [clockIn]);
 
   const handleChangeOutlet = useCallback(() => {
-    router.replace("/select-outlet");
+    router.push("/select-outlet");
   }, [router]);
 
   return {

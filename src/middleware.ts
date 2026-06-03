@@ -64,7 +64,9 @@ export function middleware(request: NextRequest) {
   }
 
   // Clock-in gating uses live outlet API `status` (open vs closed) on the client.
-  if (isAuthPublic || isOnboarding || isSelectOutlet) {
+  // `/select-outlet` and `/manage-outlets` stay reachable for authenticated sessions;
+  // those pages redirect to `/` when the outlet is open (clocked in).
+  if (isAuthPublic || isOnboarding) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

@@ -79,6 +79,7 @@ src/
 - **No** Google / social login on admin auth.
 - Login: email + password; role hardcoded **`staff`**. Success → store **`temp_token`** → **`/select-outlet`**.
 - **Select outlet** (`/select-outlet`): `GET /outlets` (catalog) using `temp_token` or `access_token` (change outlet); click outlet → `POST /auth/login-as-outlet/:outletId` → `GET /outlet/:id` for outlet **`status`** → store **`access_token`**, clear **`temp_token`**. If `status === 'open'` → **`/`**; else → **`/clock-in`**. Logout clears all tokens → **`/login`**.
+- **Switching outlets only while clocked out.** A staffer may open **Manage outlet** (`/manage-outlets`) only when the current outlet is **not `open`**. Manage outlets: `GET /outlets`, **Add** `POST /create-outlet`, **Edit** `PATCH /outlet/:outletId` (body: `name`, `address`, `city`, `phone`) at `/manage-outlets/edit/[outletId]`, **Delete** `DELETE /outlet/:outletId`. Outlet image upload API is not wired yet.
 - **Forgot password** (`/forgot-password`): email step → new + confirm password; role **`staff`** on API calls.
 - **Onboarding** (`/onboarding`): **Step 1** → `POST /auth/signup` → store **`onboarding_temp_token`** (no session yet). **Step 2** → `POST /create-outlet` then `POST /auth/login-as-outlet/:outletId` using `onboarding_temp_token` → `GET /outlet/:id` → store **`access_token`**, remove **`onboarding_temp_token`**. Route by outlet **`status`** (`open` → home, else clock-in). Re-open app with `onboarding_temp_token` → resume step 2.
 - **Clock-in** (`/clock-in`): shown when outlet **`status` is not `open`** (typically `closed`) from `GET /outlet/:id`. **Clock In** → `PATCH /outlet/:outletId/start` (sets `status: 'open'`) → **`/`**. **`isAcceptingOrders`** is separate (pause/resume orders via `/toggle` while the shift stays open). Gating uses live API data — not localStorage.
@@ -89,17 +90,69 @@ See `(auth)/layout.tsx`, `(auth)/login/page.tsx`, `(auth)/onboarding/page.tsx`.
 
 ## API layer
 
-- Direct browser calls to POS and auth services. **No** Next.js API rewrites for backend traffic.
-- **One** axios instance: `lib/axiosInstance.ts`.
-- **Per-request `baseURL`** in `lib/apis.ts`:
+- Direct browser calls to POS, auth, and catalog services. **No** Next.js API rewrites for backend traffic.
+- **Cached axios clients** per `MicroService` in `lib/axiosInstance.ts` (same pattern as hungerBite).
+- **Service routing** via `getServiceBaseUrl(MicroService.*)` in `lib/apiConstant.ts` — auth, POS (`8082`), catalog (`8083`).
 
 ```ts
-await axiosInstance.get(API_PATHS.outletOrders(id), { baseURL: POS_API_BASE_URL });
-await axiosInstance.post(AUTH_PATHS.login, payload, { baseURL: AUTH_API_BASE_URL });
+await axiosInstance(MicroService.AUTH).post(AUTH_PATHS.login, payload);
+await axiosInstance(MicroService.POS).get(API_PATHS.outletOrders(outletId));
+await axiosInstance(MicroService.CATALOG).get(API_PATHS.menuItems(outletId));
 ```
 
 - **All HTTP functions** in **`lib/apis.ts` only**.
-- Constants in **`lib/apiConstant.ts`**.
+- Path builders, env defaults, and `apiErrorMessage` in **`lib/apiConstant.ts`**.
+
+### `lib/apis.ts` — API calls only (required)
+
+Each function in **`lib/apis.ts`** must do **only**:
+
+1. Call `axiosInstance(MicroService.*)` with the correct path.
+2. **`return data`** from the response.
+
+**Do not** put in `apis.ts`:
+
+- Mapping API records into UI types (orders board, menu items, outlets, etc.).
+- `Array.isArray` guards, column grouping, or default empty arrays.
+- Helper functions such as `mapCatalog*`, `mapOrder*`, `mapOutlet*`, `String(…)`, or `Record<string, unknown>`.
+- `_id` fallbacks — backend returns **`id`**; use **`id`** everywhere in types and UI.
+
+Put transforms in the feature’s **`useHook.ts`** (`queryFn` / `mutationFn`), or a small feature util when shared by multiple routes in the same feature (e.g. `menu/utils/menuFormPayload.ts` for `catalogRecordToMenuItem`).
+
+**Raw API shapes** in **`lib/types.ts`**: `OutletOrdersApiResponse`, `OutletOrderRecord`, `OrderItemLine`, `CatalogMenuItemRecord`, `CatalogOutlet`, etc. UI types (`Order`, `MenuItem`, `OutletOrdersBoard`, …) are what hooks expose to components.
+
+**Keep mapping simple** — prefer using the API shape directly when it already matches the UI (e.g. POS orders board: `{ pending, preparing, ready, history }` arrays used as-is in `posConsole/useHook.ts`). Only map when the UI needs derived fields (`sku`, normalized status, etc.).
+
+**Example — correct `apis.ts`:**
+
+```ts
+export async function getOutletOrders(outletId: string) {
+  const { data } = await axiosInstance(MicroService.POS).get<OutletOrdersApiResponse>(
+    API_PATHS.outletOrders(outletId),
+  );
+  return data;
+}
+```
+
+**Example — correct `posConsole/useHook.ts`:**
+
+```ts
+queryFn: async () => {
+  const data = await getOutletOrders(outletId);
+  if (!data) return EMPTY_ORDERS_BOARD;
+  return {
+    pending: data.pending ?? [],
+    preparing: data.preparing ?? [],
+    ready: data.ready ?? [],
+    history: data.history ?? [],
+  };
+},
+```
+
+### POS orders API
+
+- **`GET /outlet/:outletId/orders`** returns **`{ pending, preparing, ready, history? }`** — each array contains orders with `id`, `status`, `outletId`, and populated **`items`** (`id`, `quantity`, `name`, `price`, …).
+- Order cards use **`order.id`** (never `_id`). Line items use **`line.name`** for display.
 
 ---
 
@@ -176,6 +229,7 @@ Prefer:
 - Smallest correct change; match hungerBite naming/style where applicable.
 - No drive-by refactors; no noise comments.
 - Tests only when requested or clearly valuable.
+- **No over-optimized data layers** — avoid redundant mapper helpers, `String()` on every field, and type-predicate filter chains when a direct assign or `?? []` is enough (see API layer above).
 
 ### UI overlay state (modals, dropdowns, drawers)
 
@@ -215,7 +269,8 @@ See `components/dashboardNav/index.tsx`.
 ## Quick checklist (new feature)
 
 - [ ] Route: `page.tsx` + `useHook.ts`
-- [ ] APIs in `lib/apis.ts` with correct `baseURL`
+- [ ] APIs in `lib/apis.ts` only (`return data`; no mappers in `apis.ts`)
+- [ ] Transforms in `useHook.ts`; backend fields use `id` not `_id`
 - [ ] Yup in `utils/schema.ts` if form-based
 - [ ] React Query in `useHook.ts`
 - [ ] Onboarding vs login redirect rules when touching auth
