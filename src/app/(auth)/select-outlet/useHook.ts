@@ -124,6 +124,6 @@ export function useHook() {
     refetch,
     selectingId,
     selectOutlet,
-    logout,
+    logout
   };
 }

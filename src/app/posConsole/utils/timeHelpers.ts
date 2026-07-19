@@ -15,7 +15,8 @@ function diffMs(from?: string | null, to: Date = new Date()): number {
 export function formatMinAgo(createdAt?: string | null): string {
   const m = diffMinutes(createdAt);
   if (!m) return "JUST NOW";
-  return `${m} MIN AGO`;
+  if (m === 1) return "1 MIN AGO";
+  return `${m} MINS AGO`;
 }
 
 export function formatInStatus(since?: string | null): string {

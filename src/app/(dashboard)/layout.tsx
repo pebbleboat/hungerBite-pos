@@ -1,5 +1,6 @@
 "use client";
 
+import AiChatbot from "@/components/aiChatbot";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import { getOutletById } from "@/lib/apis";
@@ -84,6 +85,7 @@ const DashboardLayout: FC<PropsWithChildren> = ({ children }) => {
     <div className="flex min-h-screen flex-col bg-[#eef2f8]">
       <Header variant="dashboard" />
       <main className="flex-1">{children}</main>
+      <AiChatbot />
       <Footer />
     </div>
   );

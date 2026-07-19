@@ -48,7 +48,7 @@ const Button = ({
   const variantClasses = {
     primary: disabled
       ? "bg-gray-100 text-gray-400 !cursor-not-allowed border border-gray-200"
-      : "bg-brand-600 hover:bg-brand-700 text-white",
+      : "bg-brand-950 hover:bg-brand-900 text-white",
     secondary: disabled
       ? "bg-white text-gray-400 !cursor-not-allowed border border-gray-200"
       : "text-gray-700 border bg-white hover:bg-gray-50 border-gray-300",

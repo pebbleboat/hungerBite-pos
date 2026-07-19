@@ -210,7 +210,6 @@ export default function EditOutletPage() {
               fullWidth
               btnName={isSubmitting ? "Saving changes…" : "Save Changes"}
               icon={<FiSave className="h-4 w-4" />}
-              className="rounded-lg! bg-brand-950! py-3! text-white! hover:bg-brand-900!"
               isLoading={isSubmitting}
               disabled={isSubmitting}
             />

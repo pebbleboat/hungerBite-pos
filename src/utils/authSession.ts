@@ -1,6 +1,6 @@
 import { setCookie, removeCookie, getCookie } from "@/utils/cookies";
 import { storageKeys } from "@/utils/enum";
-import { getLocalItem, setLocalItem, removeLocalItem } from "@/utils/localstorage";
+import { getLocalItem, setLocalItem, removeLocalItem, clearLocalStorage } from "@/utils/localstorage";
 
 export type AuthUser = {
   userId?: string;
@@ -104,7 +104,7 @@ export function clearAuthSession(): void {
   removeToken(storageKeys.ACCESS_TOKEN);
   clearOnboardingTempToken();
   clearTempToken();
-  removeLocalItem(storageKeys.CURRENT_USER);
+  clearLocalStorage()
 }
 
 export function getSessionProfile(): AuthUser | null {

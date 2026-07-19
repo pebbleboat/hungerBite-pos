@@ -10,7 +10,11 @@ export function getServiceBaseUrl(service: MicroService) {
     case MicroService.ORDER:
       return process.env.NEXT_PUBLIC_ORDER_API_URL;
     case MicroService.CATALOG:
-      return process.env.NEXT_PUBLIC_CATALOG_API_URL
+      return process.env.NEXT_PUBLIC_CATALOG_API_URL;
+    case MicroService.AGENT:
+      return (
+        process.env.NEXT_PUBLIC_AGENT_API_URL ?? "http://127.0.0.1:8084"
+      );
 
     default:
       return process.env.NEXT_PUBLIC_ORDER_API_URL;
@@ -26,6 +30,19 @@ export const AUTH_PATHS = {
     `/auth/login-as-outlet/${encodeURIComponent(outletId)}`,
 } as const;
 
+
+/** Socket.io base URL for the AI assistant (ms-agent). */
+export function getAiChatSocketUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_AI_CHAT_WS_URL ??
+    process.env.NEXT_PUBLIC_AGENT_API_URL ??
+    "http://127.0.0.1:8084"
+  );
+}
+
+export const AI_CHAT_SOCKET_EVENT = "ai_chat_message";
+export const AI_CHAT_SOCKET_RESPONSE = "ai_chat_response";
+export const AI_CHAT_SOCKET_ERROR = "ai_chat_error";
 
 export const API_PATHS = {
   createOutlet: "/create-outlet",

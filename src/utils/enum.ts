@@ -3,6 +3,7 @@ export enum MicroService {
   POS = "pos",
   ORDER = "order",
   CATALOG = "catalog",
+  AGENT = "agent",
 }
 
 export const storageKeys = {

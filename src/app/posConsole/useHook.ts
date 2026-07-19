@@ -12,13 +12,13 @@ import {
 } from "@/app/posConsole/utils/orderBoard";
 import type { OutletOrdersBoard } from "@/lib/types";
 import useSharedVariables from "@/utils/hooks/useSharedVariables";
+import useSocket, { type SocketStatus } from "@/utils/hooks/useSocket";
 import { queryKeys } from "@/utils/queryKeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+import { useCallback, useMemo, useState } from "react";
 import { apiErrorMessage } from "@/lib/apiConstant";
 
-export type SocketStatus = "idle" | "connecting" | "connected" | "error";
+export type { SocketStatus };
 
 const EMPTY_ORDERS_BOARD: OutletOrdersBoard = {
   pending: [],
@@ -51,7 +51,6 @@ export function useHook() {
   const queryClient = useQueryClient();
   const { selectedOutletId: outletId } = useSharedVariables();
   const [activeColumn, setActiveColumn] = useState<BoardColumnId>("pending");
-  const [socketStatus, setSocketStatus] = useState<SocketStatus>("idle");
 
   const {
     data: ordersBoard = EMPTY_ORDERS_BOARD,
@@ -158,32 +157,15 @@ export function useHook() {
     void refetch();
   }, [refetch]);
 
-  useEffect(() => {
-    if (!outletId) return;
-
-    setSocketStatus("connecting");
-    let socket: Socket;
-
-    try {
-      socket = io(process.env.NEXT_PUBLIC_POS_API_URL, {
-        query: { outletId },
-        transports: ["websocket", "polling"],
-      });
-    } catch {
-      setSocketStatus("error");
-      return;
-    }
-
-    socket.on("connect", () => setSocketStatus("connected"));
-    socket.on("connect_error", () => setSocketStatus("error"));
-    socket.on("disconnect", () => setSocketStatus("idle"));
-    socket.on("new_order", () => invalidateOrders());
-    socket.on("update_order", () => invalidateOrders());
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [outletId, invalidateOrders]);
+  const { status: socketStatus } = useSocket({
+    url: process.env.NEXT_PUBLIC_POS_API_URL ?? "",
+    query: { outletId },
+    enabled: Boolean(outletId),
+    setup: (socket) => {
+      socket.on("new_order", invalidateOrders);
+      socket.on("update_order", invalidateOrders);
+    },
+  });
 
   return {
     outletId,

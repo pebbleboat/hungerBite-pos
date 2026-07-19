@@ -12,7 +12,7 @@ export default function AddItemCard({ onClick }: AddItemCardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-white/60 px-6 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/60"
+      className="group min-h-[300px] flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-white/60 px-6 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/60"
     >
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors group-hover:bg-brand-100 group-hover:text-brand-700">
         <FiPlus className="h-5 w-5" />

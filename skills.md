@@ -194,6 +194,13 @@ Storage keys (cookie + localStorage): **`access_token`** (final session), **`onb
 - Socket URL from `POS_SOCKET_URL` in `apiConstant.ts`.
 - Socket + REST logic in **`posConsole/useHook.ts`**.
 
+## AI chatbot (dashboard)
+
+- Floating widget: **`components/aiChatbot`** — rendered from **`(dashboard)/layout.tsx`** on all clocked-in dashboard routes.
+- WebSocket via **socket.io** (`getAiChatSocketUrl()` in `apiConstant.ts`; env `NEXT_PUBLIC_AI_CHAT_WS_URL`, falls back to POS URL).
+- Events (`AI_CHAT_SOCKET_EVENTS`): emit **`ai_chat_message`** `{ message, outletId }`; listen **`ai_chat_response`**, **`ai_chat_error`**, **`ai_chat_typing`**.
+- UI/logic split: **`index.tsx`** (panel + FAB), **`useHook.ts`** (socket + messages), **`components/ChatMessageBubble.tsx`**.
+
 ---
 
 ## Root layout & hydration

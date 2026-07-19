@@ -3,6 +3,7 @@ import { FirebaseInit } from "./FirebaseInit";
 import "@/styles/globals.css";
 import ReactQueryClientProvider from "../components/ReactQueryClientProvider";
 import ToastProvider from "../components/ToastProvider";
+import InputField from "@/shared/input/InputField";
 
 export const metadata: Metadata = {
   title: "POS admin",

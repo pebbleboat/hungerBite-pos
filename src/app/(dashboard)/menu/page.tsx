@@ -48,7 +48,6 @@ export default function MenuPage() {
           type="button"
           btnName="Add New Item"
           icon={<FiPlus className="h-4 w-4" />}
-          className="rounded-lg! bg-brand-950! py-2.5! text-white! hover:bg-brand-900!"
           onClick={() => router.push("/menu/add-item")}
           disabled={!selectedOutletId || isLoading}
         />

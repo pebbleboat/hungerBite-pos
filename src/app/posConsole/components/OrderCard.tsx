@@ -74,12 +74,7 @@ function HistoryCard({ order }: { order: Order }) {
           {statusDisplay.label}
         </span>
       </div>
-      <Text
-        as="p"
-        size="sm"
-        type="semibold"
-        className="mt-2 text-gray-900"
-      >
+      <Text as="p" size="sm" type="semibold" className="mt-2 text-gray-900">
         {customerOf(order)}
       </Text>
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -115,7 +110,8 @@ export default function OrderCard({
   const pendingUrgent =
     column === "pending" && isPendingUrgent(order.createdAt);
   const preparingUrgent =
-    column === "preparing" && isPreparingUrgent(order.acceptedAt ?? order.updatedAt);
+    column === "preparing" &&
+    isPreparingUrgent(order.acceptedAt ?? order.updatedAt);
 
   return (
     <div
@@ -138,9 +134,7 @@ export default function OrderCard({
           <span
             className={clsx(
               "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-              pendingUrgent
-                ? "bg-red-50 text-red-600"
-                : "text-gray-400",
+              pendingUrgent ? "bg-red-50 text-red-600" : "text-gray-400",
             )}
           >
             {formatMinAgo(order.createdAt)}
@@ -151,9 +145,7 @@ export default function OrderCard({
           <span
             className={clsx(
               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-              preparingUrgent
-                ? "bg-red-50 text-red-600"
-                : "text-gray-500",
+              preparingUrgent ? "bg-red-50 text-red-600" : "text-gray-500",
             )}
           >
             {preparingUrgent ? (
@@ -185,10 +177,7 @@ export default function OrderCard({
         as="p"
         size="base"
         type="bold"
-        className={clsx(
-          "text-gray-900",
-          column === "ready" ? "mt-2" : "mt-3",
-        )}
+        className={clsx("text-gray-900", column === "ready" ? "mt-2" : "mt-3")}
       >
         {customerOf(order)}
       </Text>
@@ -203,7 +192,6 @@ export default function OrderCard({
             fullWidth
             size="sm"
             btnName="Accept"
-            className="rounded-lg! bg-brand-950! py-2.5! text-white! hover:bg-brand-900!"
             onClick={() => onAccept?.(order.id)}
             disabled={isActionPending}
             isLoading={isActionPending}

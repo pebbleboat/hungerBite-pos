@@ -36,7 +36,6 @@ export default function AddMenuItemPage() {
               fullWidth
               btnName={isSubmitting ? "Adding item…" : "Add Item to Menu"}
               icon={<FiPlus className="h-4 w-4" />}
-              className="rounded-lg! bg-brand-950! py-3! text-white! hover:bg-brand-900!"
               isLoading={isSubmitting}
               disabled={isSubmitting}
             />
